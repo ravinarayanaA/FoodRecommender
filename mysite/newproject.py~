@@ -1,0 +1,248 @@
+import math
+import os
+import glob
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+from sklearn.metrics import adjusted_rand_score
+
+
+
+def search(word,j):
+	#print word
+	temp1 =[]
+	f = open("/home/ravinarayana/Desktop/docs/food.txt", "r")
+	searchlines = list(f.readlines())
+	
+	f.close()
+
+	for i, line in enumerate(searchlines):
+		#print line
+		if i == len(searchlines)-1:
+			return [],j
+		#print word	
+		word = str(word).lower()
+		line = line.lower()
+		if word in line:
+		#print label_list[j]
+			#print line
+			del temp1[:]
+			j = j+1
+			for l in searchlines[i+2:i+100]: 
+				if "*" in l:
+					break
+				temp1.append(l.rstrip('\n\r\t')) 		
+		#print len(temp1)
+			#print temp1
+			return temp1,j
+
+
+
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+@static_vars(iter_no=0)
+def find_similarity(folder,keyword_set):
+
+	similarity = []
+	del similarity[:]
+	find_similarity.iter_no = find_similarity.iter_no + 1
+	#print find_similarity.iter_no
+	match_count = 0
+	#print folder
+	if folder == '':
+		folder = str(folder) + "/"	
+		cluster_folder = str(folder) * (find_similarity.iter_no - 1)	
+		path = "/home/ravinarayana/Desktop/clusters/"+ cluster_folder 
+		#print path
+		num_clusters = len(glob.glob1(path,"cluster*.txt"))
+	else:
+		num_clusters = len(glob.glob1(folder,"cluster*.txt"))
+	#print "num_cluster" + str(num_clusters)
+	for k in range (num_clusters):
+		#print "k" + str(k)
+		if find_similarity.iter_no == 1:
+			path = "/home/ravinarayana/Desktop/clusters/"+ cluster_folder + "cluster" + str(k) + ".txt"
+		else:
+			path = "/home/ravinarayana/Desktop/clusters/" + "cluster" + str(k) + ".txt"
+		#print path
+		match_count = 0
+		for keyword in keyword_set:
+					
+			f = open(path, "r")
+			keywords = f.readlines()
+			f.close()
+			cluster_keyword_set = []
+			for line in keywords:
+				cluster_keyword_set.append(line.rstrip('\n'))
+			for doc_word in cluster_keyword_set:
+				sim_keyword = JNLA( keyword, doc_word)
+				#if k == 0:
+					#print "doc_word: "+doc_word+ " keyword: " + keyword + "similarity: " + str(sim_keyword)
+				if(sim_keyword > 0.4):
+					#print keyword
+					#print doc_word
+					match_count = match_count + 1
+		
+		#print match_count
+		#print len(keyword_set)
+		#print cluster_keyword_set
+		max_val = max( len(keyword_set), len(cluster_keyword_set))
+		#print 'maxval' +str(max_val) + ": " + str(k)
+		#print 'match_count' +	str(k) + ": " + str(match_count) 
+		sim_val = float(float(match_count)/float(max_val))
+		#print sim_val
+		similarity.append(sim_val)
+	#print similarity
+	return similarity
+
+def ngrams(sequence, n):
+    sequence = list(sequence)
+    count = max(0, len(sequence) - n + 1)
+    return [tuple(sequence[i:i+n]) for i in range(count)] 
+
+def distance_bigrams_same(t1, t2):
+    t1_terms = list(t1)
+    t2_terms = list(t2)
+    terms1 = ngrams(t1_terms, 2)
+    terms2 = ngrams(t2_terms, 2)
+    shared_terms = set(terms1).intersection(terms2)
+    all_terms = set(terms1).union(terms2)
+    dist = 0.0
+    if len(all_terms) > 0:
+        dist = (len(shared_terms) / float(len(all_terms)))
+    return dist
+
+def hlength(a,b):
+	return math.exp( (-abs(len(a)-len(b))/(len(a)+len(b) )))
+	    
+def jaccards(a,b):
+	c = set(a).intersection(b)
+	return (float(len(c)) / (len(a) + len(b) - len(c)))
+
+def JNLA(keyword, doc_word):
+	jac = jaccards(keyword, doc_word)
+	ngram_sim = distance_bigrams_same(keyword, doc_word)
+	hlen = hlength(keyword, doc_word)
+	#print jac
+	#print ngram_sim
+	#print hlen
+	return ((float(jac)+float(ngram_sim)+float(hlen))/3)
+	
+def find_items(input_list ):
+	output = []
+	temp = []
+	cluster_labels = []
+	cluster_labels.append([])
+	documents = []
+	keyword_set =[]
+	
+	
+	
+	items = []
+	j = 0
+
+	cluster_folder = ''
+
+	'''f1 = open("/home/ravinarayana/Desktop/docs/input.txt", "r")
+	labellines = f1.readlines()
+	f1.close()
+	for line in labellines:
+		input_list.append(line.rstrip('\n'))
+	#return labellines
+	#return input_list'''
+
+
+	
+	#return "x"
+	var = 1
+	while var == 1:
+		if j == len(input_list):
+		  	var = 0
+		else:
+			word = str(input_list[j])
+			temp1,j = search(input_list[j],j)
+			if temp1 == []:
+				return word + " does not exists"
+			documents.append(' '.join(temp1))
+	#return documents
+
+	true_k = 1
+	vectorizer = TfidfVectorizer(stop_words='english')
+	X = vectorizer.fit_transform(documents)
+	model = KMeans(n_clusters=true_k, init='k-means++', max_iter=500, n_init=50)
+	model.fit(X)
+	model_lab = list(model.labels_)
+	#print model_lab
+	#for i in range(len(input_list)):
+	#	temp.append([input_list[i],model_lab[i]])
+	#print temp
+
+	'''for i in range(len(temp)):
+		path = "/home/ravinarayana/Desktop/clusters/" +  str(temp[i][1]) + "/"
+		if not os.path.exists(os.path.dirname(path)):
+			try:
+				os.makedirs(os.path.dirname(path))
+			except OSError as exc: # Guard against race condition
+				if exc.errno != errno.EEXIST:
+					raise
+		filename = path + str(temp[i][1]) + ".txt"
+		with open(filename, "a") as f:
+			f.write(str(temp[i][0]) + "\n")	
+			f.close'''
+	'''for i in range(len(temp)):
+		val = temp[i][1]
+		label = str(temp[i][0])
+		print val
+		print label
+		cluster_labels[0].append("%s" %label)
+	print cluster_labels'''
+	#print("Top terms per cluster:")
+	order_centroids = model.cluster_centers_.argsort()[:, ::-1]
+	terms = vectorizer.get_feature_names()
+	for i in range(true_k):
+		#print "Cluster %d:" % i,   
+		for ind in order_centroids[i, :20]:
+			#print '%s' % terms[ind],
+			keyword_set.append(terms[ind])
+	#print keyword_set
+	#keyword_set = ["seeds","oil","green","leaves","salt","mustard","cumin","coriander","chillies","curry"]
+	similarity = find_similarity('',keyword_set)
+	#print similarity
+	MaxSimCluster = similarity.index(max(similarity))
+	#print MaxSimCluster
+	folder = str(MaxSimCluster) + "/"
+	#print find_similarity.iter_no
+	#print MaxSimCluster
+	path = "/home/ravinarayana/Desktop/clusters/"+ folder + str(MaxSimCluster) + ".txt"
+	file_path = "/home/ravinarayana/Desktop/clusters/"+ folder
+	#print path
+	total = 0
+	for line in open(path).xreadlines(  ): total += 1
+	#print total
+	val = 1
+	while val == 1: 	
+		if (total > 20):
+			similarity = find_similarity(file_path,keyword_set)
+			#print similarity
+			MaxSimCluster = similarity.index(max(similarity))
+			#print MaxSimCluster
+			folder = folder + str(MaxSimCluster) + "/"
+			path = "/home/ravinarayana/Desktop/clusters/"+ folder + str(MaxSimCluster) + ".txt"
+			file_path = "/home/ravinarayana/Desktop/clusters/"+ folder
+			#print file_path
+			total = 0
+			for line in open(path).xreadlines(  ): total += 1
+			#print total
+		else:	
+			f = open(path, "r")
+			output = f.readlines()
+			for i in output:
+				 items.append(i.rstrip('\n'))
+			val = 0
+	return items
+
+#print(find_items(["rava ladoo", "rasmalai"]))

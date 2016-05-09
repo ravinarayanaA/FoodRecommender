@@ -1,0 +1,8 @@
+from django.conf.urls import url
+
+
+urlpatterns = [
+     url(r"^(.*)$", "mysite.views.get_name"),
+    url(r"^(.*)$", "mysite.views.static_view"),
+   
+]
