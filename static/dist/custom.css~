@@ -1,9 +1,0 @@
-.jumbotron h1{
-font-size: 63px;
-    color: #C50808;
-}
-
-.jumbotron{
-background-image: url(http://i.ndtvimg.com/i/2015-03/indian-chicken_625x350_61427604718.jpg);
-background-size: cover;
-height: 100%;}

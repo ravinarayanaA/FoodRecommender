@@ -1,7 +1,0 @@
-Django==1.9.4
-django-appconf==1.0.2
-django-bootstrap-form==3.2.1
-numpy==1.11.0
-pinax-theme-bootstrap==7.4.0
-scipy==0.17.0
-scikit-learn==0.17.1
