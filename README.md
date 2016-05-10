@@ -1,4 +1,4 @@
-# mysite
+# Food Recommendation System
 
 ## Getting Started
 
